@@ -23,10 +23,10 @@ jobs:
 
     steps:
       - name: "Checkout code"
-        uses: "actions/checkout@v6"
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6
 
       - name: "Install PHP"
-        uses: "shivammathur/setup-php@v2"
+        uses: "shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f" # v2
         with:
           coverage: "none"
           php-version: "8.2"
@@ -37,7 +37,7 @@ jobs:
           echo "COMPOSER_ROOT_VERSION=1.x-dev" >> $GITHUB_ENV
 
       - name: "Install dependencies with Composer"
-        uses: "ramsey/composer-install@v3"
+        uses: "ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f" # v3
         with:
           dependency-versions: "highest"
 
@@ -50,13 +50,13 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v6"
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6
 
       - name: "Build"
-        uses: "phpDocumentor/phpDocumentor@master"
+        uses: "phpDocumentor/phpDocumentor@b5d2275120f69291e98927f335c5517bd2c1b541" # master
 
       - name: "Upload"
-        uses: "actions/upload-artifact@v7"
+        uses: "actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f" # v7
         with:
           name: "documentation"
           path: "build/docs"
@@ -69,14 +69,14 @@ jobs:
     needs: "build"
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v6"
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6
         with:
           repository: "phpDocumentor/docs"
           token: "${{ secrets.BOT_TOKEN }}"
           path: "docs"
 
       - name: "Download"
-        uses: "actions/download-artifact@v8"
+        uses: "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c" # v8
         with:
           name: "documentation"
           path: "build/docs"
@@ -85,13 +85,13 @@ jobs:
         run: "rsync -r --delete build/docs/* docs/docs/components/guides"
 
       - name: "Commit"
-        uses: "stefanzweifel/git-auto-commit-action@v7"
+        uses: "stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9" # v7
         with:
           repository: "docs"
           commit_message: "Update guides documentation"
 
       - name: "Push"
-        uses: "ad-m/github-push-action@master"
+        uses: "ad-m/github-push-action@4cc74773234f74829a8c21bc4d69dd4be9cfa599" # master
         with:
           directory: "docs"
           github_token: "${{ secrets.BOT_TOKEN }}"
