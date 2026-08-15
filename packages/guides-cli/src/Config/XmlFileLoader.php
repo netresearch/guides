@@ -46,8 +46,8 @@ final class XmlFileLoader extends FileLoader
         // become 1). Reading them straight from the DOM and detaching <project>
         // beforehand keeps the version exactly as written.
         $projectConfig = null;
-        $project = $element->getElementsByTagName('project')->item(0);
-        if ($project instanceof DOMElement) {
+        $project = $this->firstChildElement($element, 'project');
+        if ($project !== null) {
             $projectConfig = [];
             foreach ($project->attributes as $attribute) {
                 if (!($attribute instanceof DOMAttr)) {
@@ -71,8 +71,12 @@ final class XmlFileLoader extends FileLoader
             $project->parentNode?->removeChild($project);
         }
 
+        // Detaching <project> can leave an otherwise empty root element behind, and
+        // convertDomElementToArray() returns null rather than an empty array for that.
         $rootConfig = XmlUtils::convertDomElementToArray($element);
-        assert(is_array($rootConfig));
+        if (!is_array($rootConfig)) {
+            $rootConfig = [];
+        }
 
         if ($projectConfig !== null) {
             $rootConfig['project'] = $projectConfig;
@@ -93,6 +97,24 @@ final class XmlFileLoader extends FileLoader
         $configs[] = $rootConfig;
 
         return $configs;
+    }
+
+    /**
+     * Returns the first direct child element of the given name.
+     *
+     * `getElementsByTagName()` would search the whole subtree, and the schema lets an <extension>
+     * carry arbitrary child elements, so a nested <project> could be read as the project configuration
+     * and removed from that extension.
+     */
+    private function firstChildElement(DOMElement $element, string $name): DOMElement|null
+    {
+        foreach ($element->childNodes as $child) {
+            if ($child instanceof DOMElement && $child->localName === $name) {
+                return $child;
+            }
+        }
+
+        return null;
     }
 
     public function supports(mixed $resource, string|null $type = null): bool
