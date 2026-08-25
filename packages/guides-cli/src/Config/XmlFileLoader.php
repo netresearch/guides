@@ -39,12 +39,9 @@ final class XmlFileLoader extends FileLoader
             throw new XmlParsingException(sprintf('The XML file "%s" is not valid.', $resource));
         }
 
-        // The <project> attributes (title, version, release, copyright) are all
-        // strings and are read from the DOM directly. XmlUtils::convertDomElementToArray()
-        // below runs phpize() on every attribute value, which coerces version-like
-        // strings into numbers ("0.10" would become the float 0.1, "1.0" would
-        // become 1). Reading them straight from the DOM and detaching <project>
-        // beforehand keeps the version exactly as written.
+        // convertDomElementToArray() below runs phpize() on every attribute value, which turns
+        // "0.10" into 0.1 and "1.0" into 1. The <project> attributes are all strings, so they are
+        // read from the DOM and the element is detached before that call.
         $projectConfig = null;
         $project = $this->firstChildElement($element, 'project');
         if ($project !== null) {
@@ -56,11 +53,8 @@ final class XmlFileLoader extends FileLoader
 
                 $value = $attribute->value;
 
-                // Backward compatibility: to stop the previous phpize() call from
-                // turning a version into a number, consumers wrapped it in single
-                // quotes (e.g. version="'3.0'"). The value is now read straight from
-                // the DOM so the quotes are no longer needed, but existing guides.xml
-                // files may still contain them; strip them for these two attributes.
+                // Files that adopted the version="'3.0'" workaround against the old phpize()
+                // call must keep rendering 3.0; the quotes are needed nowhere else.
                 if ($attribute->name === 'version' || $attribute->name === 'release') {
                     $value = trim($value, "'");
                 }
@@ -71,11 +65,8 @@ final class XmlFileLoader extends FileLoader
             $project->parentNode?->removeChild($project);
         }
 
-        // Detaching <project> can leave an otherwise empty root element behind, and
-        // convertDomElementToArray() returns null rather than an empty array for that — verified for
-        // a guides.xml whose only child is <project>. The previous `assert(is_array(...))` made the
-        // behaviour depend on `zend.assertions`: with assertions off the null simply auto-vivified on
-        // the next write, with them on the same file threw. Handle it instead of asserting it away.
+        // A file whose only child was <project> leaves an empty root here, for which
+        // convertDomElementToArray() returns null.
         $rootConfig = XmlUtils::convertDomElementToArray($element);
         if (!is_array($rootConfig)) {
             $rootConfig = [];
@@ -103,11 +94,8 @@ final class XmlFileLoader extends FileLoader
     }
 
     /**
-     * Returns the first direct child element of the given name.
-     *
-     * `getElementsByTagName()` would search the whole subtree, and the schema lets an <extension>
-     * carry arbitrary child elements, so a nested <project> could be read as the project configuration
-     * and removed from that extension.
+     * Returns the first DIRECT child of the given name. A subtree search would also find a <project>
+     * nested in an <extension>, which the schema allows, and take it for the project configuration.
      */
     private function firstChildElement(DOMElement $element, string $name): DOMElement|null
     {

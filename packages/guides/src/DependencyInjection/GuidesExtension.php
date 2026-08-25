@@ -56,14 +56,10 @@ final class GuidesExtension extends Extension implements CompilerPassInterface, 
         $rootNode = $treeBuilder->getRootNode();
         assert($rootNode instanceof ArrayNodeDefinition);
 
-        // A version is always a string, and only this tree sees both ways of setting one. XmlFileLoader
-        // hands `version`/`release` over as strings, but ContainerFactory::loadExtensionConfig() feeds a
-        // raw PHP array straight in, where the value can be a native float — and `(string) 3.0` is "3".
-        // var_export keeps the literal the caller wrote. Strings and ints are already right; the quote
-        // stripping that used to sit here belongs to XmlFileLoader, which is where the quotes come from.
-        // null passes through so the isset() below treats it as "not configured" and the default
-        // survives; var_export would turn it into the literal string "NULL" and render that as the
-        // version. The callback this restores did exactly that, which is why it is called out here.
+        // XmlFileLoader hands version/release over as strings, but
+        // ContainerFactory::loadExtensionConfig() feeds a raw PHP array into this same tree, where the
+        // value can be a native float — and `(string) 3.0` is "3". var_export keeps the literal;
+        // null passes through so the isset() below sees "not configured" rather than "NULL".
         $keepNonStringLiteral = static fn ($value) => $value === null || is_string($value) || is_int($value)
             ? $value
             : var_export($value, true);
