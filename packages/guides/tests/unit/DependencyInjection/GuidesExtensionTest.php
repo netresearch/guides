@@ -105,6 +105,15 @@ class GuidesExtensionTest extends TestCase
                 self::assertSame('0.10', self::projectSettings($container)->getVersion());
             },
         ];
+
+        // An explicit null means "not configured", so the default has to survive it. Turning it into
+        // a literal renders the string "NULL" as the project version.
+        yield 'project version as null leaves the default' => [
+            [['project' => ['version' => null]]],
+            static function (ContainerBuilder $container): void {
+                self::assertSame('', self::projectSettings($container)->getVersion());
+            },
+        ];
     }
 
     /** Reads back the ProjectSettings the extension hands to the SettingsManager definition. */

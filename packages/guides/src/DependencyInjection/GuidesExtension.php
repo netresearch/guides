@@ -61,7 +61,10 @@ final class GuidesExtension extends Extension implements CompilerPassInterface, 
         // raw PHP array straight in, where the value can be a native float — and `(string) 3.0` is "3".
         // var_export keeps the literal the caller wrote. Strings and ints are already right; the quote
         // stripping that used to sit here belongs to XmlFileLoader, which is where the quotes come from.
-        $keepNonStringLiteral = static fn ($value) => is_string($value) || is_int($value)
+        // null passes through so the isset() below treats it as "not configured" and the default
+        // survives; var_export would turn it into the literal string "NULL" and render that as the
+        // version. The callback this restores did exactly that, which is why it is called out here.
+        $keepNonStringLiteral = static fn ($value) => $value === null || is_string($value) || is_int($value)
             ? $value
             : var_export($value, true);
 
