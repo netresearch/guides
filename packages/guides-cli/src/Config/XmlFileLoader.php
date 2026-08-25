@@ -72,7 +72,10 @@ final class XmlFileLoader extends FileLoader
         }
 
         // Detaching <project> can leave an otherwise empty root element behind, and
-        // convertDomElementToArray() returns null rather than an empty array for that.
+        // convertDomElementToArray() returns null rather than an empty array for that — verified for
+        // a guides.xml whose only child is <project>. The previous `assert(is_array(...))` made the
+        // behaviour depend on `zend.assertions`: with assertions off the null simply auto-vivified on
+        // the next write, with them on the same file threw. Handle it instead of asserting it away.
         $rootConfig = XmlUtils::convertDomElementToArray($element);
         if (!is_array($rootConfig)) {
             $rootConfig = [];

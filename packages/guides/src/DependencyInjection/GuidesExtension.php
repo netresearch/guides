@@ -43,8 +43,10 @@ use function array_values;
 use function assert;
 use function dirname;
 use function is_array;
+use function is_int;
 use function is_string;
 use function pathinfo;
+use function var_export;
 
 final class GuidesExtension extends Extension implements CompilerPassInterface, ConfigurationInterface, PrependExtensionInterface
 {
@@ -54,6 +56,15 @@ final class GuidesExtension extends Extension implements CompilerPassInterface, 
         $rootNode = $treeBuilder->getRootNode();
         assert($rootNode instanceof ArrayNodeDefinition);
 
+        // A version is always a string, and only this tree sees both ways of setting one. XmlFileLoader
+        // hands `version`/`release` over as strings, but ContainerFactory::loadExtensionConfig() feeds a
+        // raw PHP array straight in, where the value can be a native float — and `(string) 3.0` is "3".
+        // var_export keeps the literal the caller wrote. Strings and ints are already right; the quote
+        // stripping that used to sit here belongs to XmlFileLoader, which is where the quotes come from.
+        $keepNonStringLiteral = static fn ($value) => is_string($value) || is_int($value)
+            ? $value
+            : var_export($value, true);
+
         $rootNode
             ->fixXmlConfig('template')
             ->fixXmlConfig('inventory', 'inventories')
@@ -61,8 +72,12 @@ final class GuidesExtension extends Extension implements CompilerPassInterface, 
                 ->arrayNode('project')
                     ->children()
                         ->scalarNode('title')->end()
-                        ->scalarNode('version')->end()
-                        ->scalarNode('release')->end()
+                        ->scalarNode('version')
+                            ->beforeNormalization()->always($keepNonStringLiteral)->end()
+                        ->end()
+                        ->scalarNode('release')
+                            ->beforeNormalization()->always($keepNonStringLiteral)->end()
+                        ->end()
                         ->scalarNode('copyright')->end()
                     ->end()
                 ->end()
